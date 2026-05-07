@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  username      String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bets          Bet[]
+  transactions  Transaction[]
+  notifications Notification[]
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startTime   DateTime
+  status      String   @default("UPCOMING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  races       Race[]
+}
+
+model Race {
+  id        String    @id @default(cuid())
+  name      String
+  number    Int
+  distance  Int
+  status    String    @default("UPCOMING")
+  startTime DateTime
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  runners   Runner[]
+  bets      Bet[]
+  oddsLines OddsLine[]
+}
+
+model Runner {
+  id           String         @id @default(cuid())
+  name         String
+  number       Int
+  barrier      Int
+  jockey       String?
+  trainer      String?
+  weight       Float?
+  raceId       String
+  race         Race           @relation(fields: [raceId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  betSelections BetSelection[]
+  oddsLines    OddsLine[]
+}
+
+model Bet {
+  id           String         @id @default(cuid())
+  amount       Float
+  status       String         @default("PENDING")
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  raceId       String
+  race         Race           @relation(fields: [raceId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  selections   BetSelection[]
+  payouts      Payout[]
+}
+
+model BetSelection {
+  id        String   @id @default(cuid())
+  betType   String
+  odds      Float
+  betId     String
+  bet       Bet      @relation(fields: [betId], references: [id])
+  runnerId  String
+  runner    Runner   @relation(fields: [runnerId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Payout {
+  id        String   @id @default(cuid())
+  amount    Float
+  status    String   @default("PENDING")
+  betId     String
+  bet       Bet      @relation(fields: [betId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  read      Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model OddsLine {
+  id        String   @id @default(cuid())
+  odds      Float
+  bookmaker String?
+  raceId    String
+  race      Race     @relation(fields: [raceId], references: [id])
+  runnerId  String
+  runner    Runner   @relation(fields: [runnerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
