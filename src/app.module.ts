@@ -7,9 +7,10 @@ import { EventsModule } from './events/events.module';
 import { BetsModule } from './bets/bets.module';
 import { WalletModule } from './wallet/wallet.module';
 import { OddsModule } from './odds/odds.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, EventsModule, BetsModule, WalletModule, OddsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, EventsModule, BetsModule, WalletModule, OddsModule],
   controllers: [AppController],
   providers: [AppService],
 })
