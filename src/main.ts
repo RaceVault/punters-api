@@ -7,5 +7,8 @@ async function bootstrap() {
     logger: new RedactingLogger(),
   });
   await app.listen(Number(process.env.PORT ?? 3000));
+  const app = await NestFactory.create(AppModule);
+  app.set('trust proxy', true);
+  await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
