@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule } from '@nestjs/config';
+import KeyvRedis from '@keyv/redis';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -13,6 +15,8 @@ import { OddsModule } from './odds/odds.module';
 import { RedisModule } from './redis/redis.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { envValidationSchema } from './config/env.validation';
+import { AppConfigService } from './config/config.service';
 import { RedisService } from './redis/redis.service';
 import { RedisThrottlerStorageService } from './throttler/redis-throttler.storage';
 import { RATE_LIMIT_WHITELISTED_IPS, getRequestIp, hasThrottleMetadata } from './throttler/throttler.utils';
@@ -34,17 +38,22 @@ const whitelistedIps = new Set(RATE_LIMIT_WHITELISTED_IPS);
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+      validationOptions: {
+        abortEarly: false,
+        allowUnknown: true,
+      },
+    }),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: () => ({
-        stores: [
-          new KeyvRedis(
-            `redis://${process.env.REDIS_HOST ?? 'localhost'}:${process.env.REDIS_PORT ?? 6379}`,
-          ),
-        ],
+        stores: [new KeyvRedis(process.env.REDIS_URL ?? 'redis://localhost:6379')],
         ttl: CACHE_TTL.DEFAULT,
       }),
     }),
+    PrismaModule,
     RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [RedisModule],
@@ -90,6 +99,7 @@ const whitelistedIps = new Set(RATE_LIMIT_WHITELISTED_IPS);
     OddsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [AppService, AppConfigService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+
 })
 export class AppModule {}
