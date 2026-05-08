@@ -8,7 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
@@ -35,6 +34,7 @@ __decorate([
 ], HealthController.prototype, "check", null);
 exports.HealthController = HealthController = __decorate([
     (0, common_1.Controller)('health'),
-    __metadata("design:paramtypes", [typeof (_a = typeof terminus_1.HealthCheckService !== "undefined" && terminus_1.HealthCheckService) === "function" ? _a : Object, redis_health_1.RedisHealthIndicator])
+    __metadata("design:paramtypes", [terminus_1.HealthCheckService,
+        redis_health_1.RedisHealthIndicator])
 ], HealthController);
 //# sourceMappingURL=health.controller.js.map

@@ -4,3 +4,5 @@ export declare const CACHE_TTL: {
     readonly EVENTS: 60000;
     readonly USERS: 300000;
 };
+export declare class AppModule {
+}
