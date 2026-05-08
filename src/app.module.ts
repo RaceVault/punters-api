@@ -42,6 +42,10 @@ export const CACHE_TTL = {
     WalletModule,
     OddsModule,
   ],
+import { PrismaModule } from './prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule, AuthModule, UsersModule, EventsModule, BetsModule, WalletModule, OddsModule],
   controllers: [AppController],
   providers: [AppService],
 })
