@@ -1,4 +1,8 @@
-import { Logger, LoggerService } from '@nestjs/common';
+import { LoggerService } from '@nestjs/common';
+import pino, { Logger } from 'pino';
+import { getRequestId } from './request-context';
+
+const SENSITIVE_KEYS = ['password', 'token', 'authorization', 'jwt', 'secret', 'walletKey', 'privateKey'];
 
 const SENSITIVE_ENV_KEYS = [
   'DATABASE_URL',
@@ -21,42 +25,57 @@ function getSecretPatterns(): RegExp[] {
   });
 }
 
-function redact(value: string): string {
+function redactString(value: string): string {
   return getSecretPatterns().reduce((current, pattern) => current.replace(pattern, '[REDACTED]'), value);
 }
 
 export class RedactingLogger implements LoggerService {
-  private readonly logger = new Logger(RedactingLogger.name);
+  private readonly pino: Logger;
+
+  constructor() {
+    this.pino = pino({
+      level: process.env.LOG_LEVEL ?? 'info',
+      redact: {
+        paths: SENSITIVE_KEYS.flatMap((k) => [`*.${k}`, k]),
+        censor: '[REDACTED]',
+      },
+      formatters: {
+        level: (label) => ({ level: label }),
+      },
+      timestamp: pino.stdTimeFunctions.isoTime,
+      base: undefined,
+    });
+  }
+
+  private withContext(message: string) {
+    return redactString(message);
+  }
+
+  private child(context?: string) {
+    const requestId = getRequestId();
+    return this.pino.child({
+      ...(context ? { context } : {}),
+      ...(requestId ? { requestId } : {}),
+    });
+  }
 
   log(message: unknown, context?: string): void {
-    this.logger.log(this.format(message), this.format(context));
+    this.child(context).info(this.withContext(String(message ?? '')));
   }
 
   error(message: unknown, trace?: string, context?: string): void {
-    this.logger.error(this.format(message), this.format(trace), this.format(context));
+    this.child(context).error({ trace: trace ? redactString(trace) : undefined }, this.withContext(String(message ?? '')));
   }
 
   warn(message: unknown, context?: string): void {
-    this.logger.warn(this.format(message), this.format(context));
+    this.child(context).warn(this.withContext(String(message ?? '')));
   }
 
-  debug?(message: unknown, context?: string): void {
-    this.logger.debug(this.format(message), this.format(context));
+  debug(message: unknown, context?: string): void {
+    this.child(context).debug(this.withContext(String(message ?? '')));
   }
 
-  verbose?(message: unknown, context?: string): void {
-    this.logger.verbose(this.format(message), this.format(context));
-  }
-
-  private format(value: unknown): string {
-    if (value === undefined || value === null) {
-      return '';
-    }
-
-    if (typeof value !== 'string') {
-      return redact(String(value));
-    }
-
-    return redact(value);
+  verbose(message: unknown, context?: string): void {
+    this.child(context).trace(this.withContext(String(message ?? '')));
   }
 }
