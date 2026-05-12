@@ -20,7 +20,7 @@ import { AppConfigService } from './config/config.service';
 import { RedisService } from './redis/redis.service';
 import { RedisThrottlerStorageService } from './throttler/redis-throttler.storage';
 import { RATE_LIMIT_WHITELISTED_IPS, getRequestIp, hasThrottleMetadata } from './throttler/throttler.utils';
-import KeyvRedis from '@keyv/redis';
+import { LoggerModule } from './logger/logger.module';
 
 // Per-resource TTLs (ms)
 export const CACHE_TTL = {
@@ -38,6 +38,7 @@ const whitelistedIps = new Set(RATE_LIMIT_WHITELISTED_IPS);
 
 @Module({
   imports: [
+    LoggerModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envValidationSchema,
@@ -90,7 +91,6 @@ const whitelistedIps = new Set(RATE_LIMIT_WHITELISTED_IPS);
       }),
     }),
     HealthModule,
-    PrismaModule,
     AuthModule,
     UsersModule,
     EventsModule,
@@ -100,6 +100,5 @@ const whitelistedIps = new Set(RATE_LIMIT_WHITELISTED_IPS);
   ],
   controllers: [AppController],
   providers: [AppService, AppConfigService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
-
 })
 export class AppModule {}
